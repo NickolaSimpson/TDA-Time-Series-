@@ -1,0 +1,75 @@
+#This code uing Linear Regression to predict the next point in the data after every 100 data points
+
+import numpy as np
+import IPython.display as display
+from matplotlib import pyplot as plt
+import io
+import base64
+import numpy as np
+import requests
+from sklearn.linear_model import LinearRegression
+import matplotlib.pyplot as plt
+
+# Fetching data from the URL
+url = "https://raw.githubusercontent.com/High-Rate-SHM-Working-Group/Dataset-7-forced-vibration-and-shock/main/data/dataset-A/inputData1_raw.txt"
+response = requests.get(url)
+data = response.text.strip().split('\n')
+
+# Parsing data
+x = []
+y = []
+for line in data:
+    parts = line.split('\t')
+    x.append(float(parts[0]))
+    y.append(float(parts[1].replace('\r', '')))
+
+# Reshaping data for scikit-learn
+x = np.array(x).reshape(-1, 1)
+y = np.array(y)
+
+# Creating and fitting the linear regression model
+model = LinearRegression()
+model.fit(x, y)
+
+# Predicting the next data point after every 100 data points
+predicted_x = []
+predicted_y = []
+for i in range(100, len(x), 100):  # Changed step size to 100
+    window_start = max(0, i - 30)  # Start of the window
+    window_end = min(len(x), i)     # End of the window
+    window_x = x[window_start:window_end]  # Window of x values
+    window_y = y[window_start:window_end]  # Window of y values
+
+    # Fit a linear regression model to the window
+    window_model = LinearRegression()
+    window_model.fit(window_x, window_y)
+
+    # Predict the next data point based on the window model
+    next_x = x[i].reshape(1, -1)
+    next_y = window_model.predict(next_x)
+
+    # Append the predicted values
+    predicted_x.append(next_x[0][0])
+    predicted_y.append(next_y[0])
+    print("Predicted next data point after", i, "data points:", next_y[0])
+
+# Plotting
+plt.figure(figsize=(10, 6))
+
+# Plot the data
+plt.plot(x, y, color='blue', label='Original Data')
+
+# Plot the linear regression line
+plt.plot(x, model.predict(x), color='orange', label='Linear Regression')
+
+# Plot the predicted data points
+plt.scatter(predicted_x, predicted_y, color='red', label='Predicted Data Points')
+
+# Set the title and labels
+plt.title('Shock Section of Time Series')
+plt.ylabel('Acceleration (m/s\u00b2)')
+plt.xlabel('Time (s)')
+plt.legend()
+
+# Display the plot
+plt.show()
