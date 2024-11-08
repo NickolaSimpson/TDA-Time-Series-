@@ -1,0 +1,69 @@
+#This code is use to predict the next point in the data using ARIMA
+
+import requests
+import numpy as np
+import matplotlib.pyplot as plt
+from statsmodels.tsa.arima.model import ARIMA
+
+# Fetching data from the URL
+url = "https://raw.githubusercontent.com/High-Rate-SHM-Working-Group/Dataset-7-forced-vibration-and-shock/main/data/dataset-A/inputData1_raw.txt"
+response = requests.get(url)
+data = response.text.strip().split('\n')
+
+# Parsing data
+x = []
+y = []
+for line in data:
+    parts = line.split('\t')
+    x.append(float(parts[0]))
+    y.append(float(parts[1].replace('\r', '')))
+
+# Define ARIMA parameters
+a = 5  # Autoregressive order
+d = 1  # Differencing order
+m= 0  # Moving average order
+
+# Combine x and y into a single time series
+time_series = np.array(y)
+
+# Fit ARIMA model
+model = ARIMA(time_series, order=(a, d, m))
+model_fit = model.fit()
+
+# Predicting the next data point after every 200 points
+predicted_x = []
+predicted_y = []
+for i in range(1000, len(y), 1000):
+    window_start = max(0, i - 30)
+    window_end = min(len(y), i)
+    window_data = time_series[window_start:window_end]
+
+    # Fit ARIMA model to the window
+    window_model = ARIMA(window_data, order=(a, d, m))
+    window_fit = window_model.fit()
+
+    # Forecast the next data point
+    forecast = window_fit.forecast(steps=1)
+
+    # Append the predicted values
+    predicted_x.append(x[i])
+    predicted_y.append(forecast[0])
+    print("Predicted next data point after", i, "data points:", forecast[0])
+
+# Plotting
+plt.figure(figsize=(10, 6))
+
+# Plot the original data
+plt.plot(x, y, color='blue', label='Original Data')
+
+# Plot the predicted data points
+plt.scatter(predicted_x, predicted_y, color='red', label='Predicted Data Points')
+
+# Set the title and labels
+plt.title('Shock Section of Time Series with ARIMA Forecast')
+plt.ylabel('Acceleration (m/s\u00b2)')
+plt.xlabel('Time (s)')
+plt.legend()
+
+# Display the plot
+plt.show()
