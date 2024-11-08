@@ -1,8 +1,8 @@
 #This code is use to predict where the data experience vibration and where it experienced shock
 
+
 import numpy as np
 import requests
-from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -23,7 +23,18 @@ plt.grid(True)
 shock_threshold = 50  # Adjust this threshold based on your data
 vibration_threshold = 10  # Adjust this threshold based on your data
 
-# Identify transitions from shock to vibration or vice versa
+# Identify and plot points where acceleration crosses thresholds
+shock_points = data[data['Acceleration'] >= shock_threshold]
+vibration_points = data[data['Acceleration'] <= vibration_threshold]
+
+plt.scatter(shock_points['Time'], shock_points['Acceleration'], color='orange', label='Shock', zorder=5)
+plt.scatter(vibration_points['Time'], vibration_points['Acceleration'], color='gray', label='Vibration', zorder=5)
+
+# Show the plot
+plt.legend()
+plt.show()
+
+# Print the identified transitions
 transitions = []
 prev_state = None
 for index, row in data.iterrows():
@@ -38,14 +49,6 @@ for index, row in data.iterrows():
         transitions.append((row['Time'], state))
         prev_state = state
 
-# Print the identified transitions
 print("Transitions:")
 for transition in transitions:
     print("Time: {:.2f}s, State: {}".format(transition[0], transition[1]))
-
-# Plotting the transitions on the graph
-for transition in transitions:
-    plt.axvline(x=transition[0], color='red', linestyle='--', label=transition[1])
-
-plt.legend()
-plt.show()
