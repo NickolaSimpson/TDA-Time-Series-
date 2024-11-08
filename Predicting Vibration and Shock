@@ -1,0 +1,51 @@
+#This code is use to predict where the data experience vibration and where it experienced shock
+
+import numpy as np
+import requests
+from sklearn.linear_model import LinearRegression
+import matplotlib.pyplot as plt
+import pandas as pd
+
+# Fetching data from the URL
+url = "https://raw.githubusercontent.com/High-Rate-SHM-Working-Group/Dataset-7-forced-vibration-and-shock/main/data/dataset-A/inputData1_raw.txt"
+response = requests.get(url)
+data = pd.read_csv(url, delimiter='\t', header=None, names=['Time', 'Acceleration'])
+
+# Plot the acceleration data
+plt.figure(figsize=(10, 6))
+plt.plot(data['Time'], data['Acceleration'], color='blue', label='Acceleration')
+plt.xlabel('Time (s)')
+plt.ylabel('Acceleration (m/s^2)')
+plt.title('Acceleration vs. Time')
+plt.grid(True)
+
+# Define threshold values for shock and vibration
+shock_threshold = 50  # Adjust this threshold based on your data
+vibration_threshold = 10  # Adjust this threshold based on your data
+
+# Identify transitions from shock to vibration or vice versa
+transitions = []
+prev_state = None
+for index, row in data.iterrows():
+    if row['Acceleration'] >= shock_threshold:
+        state = 'Shock'
+    elif row['Acceleration'] <= vibration_threshold:
+        state = 'Vibration'
+    else:
+        state = 'Transition'
+
+    if state != prev_state:
+        transitions.append((row['Time'], state))
+        prev_state = state
+
+# Print the identified transitions
+print("Transitions:")
+for transition in transitions:
+    print("Time: {:.2f}s, State: {}".format(transition[0], transition[1]))
+
+# Plotting the transitions on the graph
+for transition in transitions:
+    plt.axvline(x=transition[0], color='red', linestyle='--', label=transition[1])
+
+plt.legend()
+plt.show()
